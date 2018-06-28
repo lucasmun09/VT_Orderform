@@ -6,12 +6,11 @@ import datetime
 from datetime import timedelta
 # max of 25 characters
 
-INVOICE_TEMPLATE_PATH = 'blank.pdf'
-INVOICE_OUTPUT_PATH = 'test.pdf'
+INVOICE_TEMPLATE_PATH = 'Lucas.pdf'
+INVOICE_OUTPUT_PATH = 'request.pdf'
 
 NEEDED_BY = 7  # Needed by (today + number of days)
 
-keys = []
 ANNOT_KEY = '/Annots'
 ANNOT_FIELD_KEY = '/T'
 ANNOT_VAL_KEY = '/V'
@@ -25,7 +24,7 @@ date_needed = (datetime.datetime.now() + diff).strftime('%m/%d/%Y')
 
 
 def write_fillable_pdf(input_pdf_path, output_pdf_path, data_dict):
-    global keys
+    keys = []
     template_pdf = pdfrw.PdfReader(input_pdf_path)
     annotations = template_pdf.pages[0][ANNOT_KEY]
     for annotation in annotations:
@@ -39,7 +38,6 @@ def write_fillable_pdf(input_pdf_path, output_pdf_path, data_dict):
                     )
         annotation.update(pdfrw.PdfDict(AP=''))
     pdfrw.PdfWriter().write(output_pdf_path, template_pdf)
-
 
 # returns dict with given vendor data
 def set_vendor_dict(input_list):
@@ -63,15 +61,18 @@ def set_vendor_dict(input_list):
 # TODO: Wrong logic flow
 def set_request_dict(input_list):
     request_dict = {}
+    total = 0
     for index, row in enumerate(input_list):
         request_dict['QtyRow' + str(index + 1)] = row[2]
         request_dict['Unit EaPkgFtRow' + str(index + 1)] = row[3]
         request_dict['Item Number  Item descriptionRow' + str(index + 1)] = row[4]
         request_dict['Cost per UnitRow' + str(index + 1)] = row[5]
+        total = str(round(eval("{0} * {1} + {2}".format(row[2],row[5],total)),2))
         try:
             request_dict['TotalRow' + str(index + 1)] = str(round(float(row[2]) * float(row[5]), 2))
         except:
             print("serror")
+    request_dict['TotalTotal Cost'] = total
     return request_dict
 
 
@@ -95,27 +96,19 @@ def return_vendors(input_list):
 # todo, create a new page if there is more than 10 item in a vendor
 def generate_page_data(raw_requests, vendor_dict): # With the given raw requests, it will put the requests in separate list
     pages_data = {}
-    for request in raw_requests:
-        if not request[1] in pages_data:
-            pages_data[request[1]] = [[request]]
+    for item in raw_requests:
+        if item[1] not in pages_data:
+            pages_data[item[1]] = [item]
         else:
-            pages_data[request[1]][-1].append(request)
-
+            pages_data[item[1]].append(item)
     pages = []
 
-
-    for vendor in vendor_dict:
-        if vendor in pages_data:
-            for vendor in pages_data[vendor]:
-                for page in vendor:
-                    payload_dict = {**set_request_dict(vendor), **set_request_dict(page)}
-                    #pages.append({** set_request_dict(vendor), **set_request_dict(page)})
-                    pages.append(payload_dict)
-
-                    print("")
-        print("")
-    #print(pages)
-
+    while len(pages_data) > 0:
+        for vendor in pages_data:
+            while len(pages_data[vendor]) > 0:
+                pages.append({**set_request_dict(pages_data[vendor][:10]), **vendor_dict[vendor]})
+                del pages_data[vendor][:10]
+        del pages_data[vendor]
 
     return pages
 
@@ -123,10 +116,10 @@ def main():
     # write_fillable_pdf(INVOICE_TEMPLATE_PATH, INVOICE_OUTPUT_PATH, data_dict)
     request_data = open_csv("requests.csv")    # timestamp, vendor, qty, unit, item, cost, comment
     vendor_data = open_csv("vendors.csv")    # vendor, street, city, state,zip,phone,fax
-    # payload_dict = {**request_dict, **vendor_dict} # combine requests fields and vendor fields into one
-
     pages_data = generate_page_data(request_data, set_vendor_dict(vendor_data))
 
+    for index, page in enumerate(pages_data):
+        write_fillable_pdf(INVOICE_TEMPLATE_PATH, "{0}_request.pdf".format(index),page)
 
 if __name__ == '__main__':
     main()
