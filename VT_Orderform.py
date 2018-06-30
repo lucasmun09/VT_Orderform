@@ -94,7 +94,7 @@ def return_vendors(input_list):
 
 
 # todo, create a new page if there is more than 10 item in a vendor
-def generate_page_data(raw_requests, vendor_data): # With the given raw requests, it will put the requests in separate list
+def generate_page_data(raw_requests, vendor_dict): # With the given raw requests, it will put the requests in separate list
     pages_data = {}
     for item in raw_requests:
         if item[1] not in pages_data:
@@ -103,25 +103,12 @@ def generate_page_data(raw_requests, vendor_data): # With the given raw requests
             pages_data[item[1]].append(item)
     pages = []
 
-<<<<<<< HEAD
-    vendor_dict = {}
-    for vendor in vendor_data:
-        vendor_dict[vendor_data[0]] = set_request_dict(vendor)
-    vendor_dict = set_request_dict(vendor_data)
-
-    for vendor_type in pages_data:
-        print(pages_data[vendor_type])
-        print("")
-    #print(pages)
-
-=======
     while len(pages_data) > 0:
         for vendor in pages_data:
             while len(pages_data[vendor]) > 0:
                 pages.append({**set_request_dict(pages_data[vendor][:10]), **vendor_dict[vendor]})
                 del pages_data[vendor][:10]
         del pages_data[vendor]
->>>>>>> 0787d6d416b5328356217d36462edb6ec54027ee
 
     return pages
 
@@ -129,13 +116,7 @@ def main():
     # write_fillable_pdf(INVOICE_TEMPLATE_PATH, INVOICE_OUTPUT_PATH, data_dict)
     request_data = open_csv("requests.csv")    # timestamp, vendor, qty, unit, item, cost, comment
     vendor_data = open_csv("vendors.csv")    # vendor, street, city, state,zip,phone,fax
-<<<<<<< HEAD
-    # payload_dict = {**request_dict, **vendor_dict} # combine requests fields and vendor fields into one
-
-    pages_data = generate_page_data(request_data, vendor_data)
-=======
     pages_data = generate_page_data(request_data, set_vendor_dict(vendor_data))
->>>>>>> 0787d6d416b5328356217d36462edb6ec54027ee
 
     for index, page in enumerate(pages_data):
         write_fillable_pdf(INVOICE_TEMPLATE_PATH, "{0}_request.pdf".format(index),page)
