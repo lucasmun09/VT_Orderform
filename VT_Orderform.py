@@ -93,7 +93,7 @@ def return_vendors(input_list):
 
 
 # todo, create a new page if there is more than 10 item in a vendor
-def generate_page_data(raw_requests, vendor_dict): # With the given raw requests, it will put the requests in separate list
+def generate_page_data(raw_requests, vendor_data): # With the given raw requests, it will put the requests in separate list
     pages_data = {}
     for request in raw_requests:
         if not request[1] in pages_data:
@@ -103,16 +103,13 @@ def generate_page_data(raw_requests, vendor_dict): # With the given raw requests
 
     pages = []
 
+    vendor_dict = {}
+    for vendor in vendor_data:
+        vendor_dict[vendor_data[0]] = set_request_dict(vendor)
+    vendor_dict = set_request_dict(vendor_data)
 
-    for vendor in vendor_dict:
-        if vendor in pages_data:
-            for vendor in pages_data[vendor]:
-                for page in vendor:
-                    payload_dict = {**set_request_dict(vendor), **set_request_dict(page)}
-                    #pages.append({** set_request_dict(vendor), **set_request_dict(page)})
-                    pages.append(payload_dict)
-
-                    print("")
+    for vendor_type in pages_data:
+        print(pages_data[vendor_type])
         print("")
     #print(pages)
 
@@ -125,7 +122,7 @@ def main():
     vendor_data = open_csv("vendors.csv")    # vendor, street, city, state,zip,phone,fax
     # payload_dict = {**request_dict, **vendor_dict} # combine requests fields and vendor fields into one
 
-    pages_data = generate_page_data(request_data, set_vendor_dict(vendor_data))
+    pages_data = generate_page_data(request_data, vendor_data)
 
 
 if __name__ == '__main__':
